@@ -1,0 +1,136 @@
+import threading
+import time
+
+import keyboard
+import tkinter as tk
+from tkinter import messagebox
+
+from english_words import get_english_words_set
+
+import sys, os
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.dirname(__file__)
+    return os.path.join(base_path, relative_path)
+
+
+class LastLetterApp:
+    def __init__(self, root: tk.Tk) -> None:
+        self.root = root
+        self.root.title("Last Letter Helper")
+        self.root.resizable(False, False)
+
+        try:
+            self.root.iconbitmap(resource_path("LastLetter.ico"))
+        except Exception as e:
+            print("Icon load error:", e)
+
+        self.wordlist: list[str] = []
+        self.wordlist_loaded = False
+        self.wordlist_error = None
+
+        self.used_words: set[str] = set()
+
+        self.prefix_var = tk.StringVar()
+
+        main_frame = tk.Frame(self.root, padx=10, pady=10)
+        main_frame.pack(fill="both", expand=True)
+
+        label = tk.Label(main_frame, text="Starting letters:")
+        label.grid(row=0, column=0, sticky="w")
+
+        entry = tk.Entry(main_frame, textvariable=self.prefix_var, width=20)
+        entry.grid(row=1, column=0, columnspan=2, sticky="we", pady=(2, 6))
+        entry.focus_set()
+        entry.bind("<Control-Return>", self.on_ctrl_enter)
+
+        self.status_var = tk.StringVar(value="Loading word list...")
+        status_label = tk.Label(main_frame, textvariable=self.status_var, fg="gray")
+        status_label.grid(row=2, column=0, columnspan=2, sticky="w", pady=(0, 6))
+
+        start_button = tk.Button(main_frame, text="Play round", command=self.on_play_round)
+        start_button.grid(row=3, column=0, sticky="we", pady=(0, 4))
+
+        clear_cache_button = tk.Button(main_frame, text="Clear cache", command=self.on_clear_cache)
+        clear_cache_button.grid(row=3, column=1, sticky="we", pady=(0, 4), padx=(4, 0))
+
+        quit_button = tk.Button(main_frame, text="Quit", command=self.root.destroy)
+        quit_button.grid(row=4, column=0, columnspan=2, sticky="we", pady=(0, 4))
+
+        main_frame.grid_columnconfigure(0, weight=1)
+        main_frame.grid_columnconfigure(1, weight=1)
+
+        threading.Thread(target=self.load_wordlist, daemon=True).start()
+
+    def load_wordlist(self) -> None:
+        try:
+            words_set = get_english_words_set(["web2"], lower=False)
+            self.wordlist = sorted(words_set)
+            self.wordlist_loaded = True
+            self.wordlist_error = None
+            self.root.after(0, lambda: self.status_var.set("Word list loaded."))
+        except Exception as exc:
+            self.wordlist_loaded = False
+            self.wordlist_error = exc
+            self.root.after(0, lambda: self.status_var.set("Failed to load word list."))
+
+    def find_completion(self, prefix: str) -> str | None:
+        if not self.wordlist_loaded or not self.wordlist:
+            return None
+        lower_prefix = prefix.lower()
+        for word in self.wordlist:
+            if word in self.used_words:
+                continue
+            if word.lower().startswith(lower_prefix) and len(word) > len(prefix):
+                self.used_words.add(word)
+                return word[len(prefix) :]
+        return None
+
+    def on_clear_cache(self) -> None:
+        self.used_words.clear()
+
+    def on_play_round(self) -> None:
+        prefix = self.prefix_var.get().strip()
+        if not prefix:
+            messagebox.showwarning("Last Letter Helper", "Please enter starting letters.")
+            return
+
+        if not self.wordlist_loaded:
+            messagebox.showwarning("Last Letter Helper", "Word list is still loading or failed. Try again in a moment.")
+            return
+
+        completion = self.find_completion(prefix)
+        if completion is None:
+            messagebox.showinfo("Last Letter Helper", "No word found starting with those letters.")
+            return
+
+        self.root.withdraw()
+
+        threading.Thread(target=self._type_after_delay, args=(completion,), daemon=True).start()
+
+    def on_ctrl_enter(self, event):
+        self.on_play_round()
+        return "break"
+
+    def _type_after_delay(self, completion: str) -> None:
+        time.sleep(1.0)
+        try:
+            for ch in completion:
+                keyboard.press_and_release(ch)
+                time.sleep(0.03)
+            keyboard.send("enter")
+        finally:
+            self.root.after(0, self.root.deiconify)
+
+
+def main() -> None:
+    root = tk.Tk()
+    app = LastLetterApp(root)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
