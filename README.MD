@@ -1,17 +1,17 @@
-LastLetter Helpers
+LastLetter Cheat
 ===================
 
-External helper tools for the Roblox game "Last Letter".
+External Cheat tools for the Roblox game "Last Letter".
 
 They provide two modes:
 
 - LAST_LETTER.pyw ("Last Letter" mode)
-  - Classic last-letter style gameplay.
+  - Classic last-letter gameplay.
   - You type the starting letters, and it finds a word that begins with them.
   - It then types the rest of the word for you automatically.
 
 - ONE_BY_ONE.pyw ("One By One" mode)
-  - For games where you add one letter at a time to build a word.
+  - Where you add one letter at a time to build a word.
   - You type the current fragment, and it suggests the next letter and a full word.
 
 Safety
