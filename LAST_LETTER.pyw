@@ -1,5 +1,6 @@
 import threading
 import time
+import random
 
 import keyboard
 import tkinter as tk
@@ -35,6 +36,7 @@ class LastLetterApp:
         self.used_words: set[str] = set()
 
         self.prefix_var = tk.StringVar()
+        self.mode_var = tk.StringVar(value="Random Words")
 
         main_frame = tk.Frame(self.root, padx=10, pady=10)
         main_frame.pack(fill="both", expand=True)
@@ -73,11 +75,23 @@ class LastLetterApp:
         )
         speed_scale.grid(row=5, column=0, columnspan=2, sticky="we", pady=(0, 4))
 
+        mode_label = tk.Label(main_frame, text="Word selection mode:")
+        mode_label.grid(row=6, column=0, sticky="w")
+
+        mode_dropdown = tk.OptionMenu(
+            main_frame,
+            self.mode_var,
+            "Random Words",
+            "Short Words",
+            "Long Words",
+        )
+        mode_dropdown.grid(row=6, column=1, sticky="e")
+
         quit_button = tk.Button(main_frame, text="Quit", command=self.root.destroy)
-        quit_button.grid(row=6, column=0, columnspan=2, sticky="we", pady=(0, 4))
+        quit_button.grid(row=7, column=0, columnspan=2, sticky="we", pady=(0, 4))
 
         credit_label = tk.Label(main_frame, text="Made by elDziad0", fg="gray")
-        credit_label.grid(row=7, column=0, columnspan=2, sticky="e")
+        credit_label.grid(row=8, column=0, columnspan=2, sticky="e")
 
         main_frame.grid_columnconfigure(0, weight=1)
         main_frame.grid_columnconfigure(1, weight=1)
@@ -101,14 +115,32 @@ class LastLetterApp:
     def find_completion(self, prefix: str) -> str | None:
         if not self.wordlist_loaded or not self.wordlist:
             return None
+
         lower_prefix = prefix.lower()
+
+        candidates: list[str] = []
         for word in self.wordlist:
             if word in self.used_words:
                 continue
-            if word.lower().startswith(lower_prefix) and len(word) > len(prefix):
-                self.used_words.add(word)
-                return word[len(prefix) :]
-        return None
+            if not word.lower().startswith(lower_prefix):
+                continue
+            if len(word) <= len(prefix):
+                continue
+            candidates.append(word)
+
+        if not candidates:
+            return None
+
+        mode = self.mode_var.get()
+        if mode == "Short Words":
+            chosen = min(candidates, key=len)
+        elif mode == "Long Words":
+            chosen = max(candidates, key=len)
+        else:
+            chosen = random.choice(candidates)
+
+        self.used_words.add(chosen)
+        return chosen[len(prefix) :]
 
     def on_clear_cache(self) -> None:
         self.used_words.clear()
@@ -145,6 +177,7 @@ class LastLetterApp:
                 keyboard.press_and_release(ch)
                 time.sleep(delay)
             keyboard.send("enter")
+            time.sleep(1.0)
         finally:
             self.root.after(0, self.root.deiconify)
 
