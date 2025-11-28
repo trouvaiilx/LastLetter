@@ -40,10 +40,10 @@ class OneByOneHelperApp:
         label = tk.Label(main_frame, text="Current fragment:")
         label.grid(row=0, column=0, sticky="w")
 
-        entry = tk.Entry(main_frame, textvariable=self.fragment_var, width=20)
-        entry.grid(row=1, column=0, columnspan=2, sticky="we", pady=(2, 6))
-        entry.focus_set()
-        entry.bind("<Control-Return>", self.on_ctrl_enter)
+        self.entry = tk.Entry(main_frame, textvariable=self.fragment_var, width=20)
+        self.entry.grid(row=1, column=0, columnspan=2, sticky="we", pady=(2, 6))
+        self.entry.focus_set()
+        self.entry.bind("<Control-Return>", self.on_ctrl_enter)
 
         suggest_button = tk.Button(main_frame, text="Suggest move", command=self.on_suggest)
         suggest_button.grid(row=2, column=0, sticky="we", pady=(0, 4))
@@ -60,8 +60,13 @@ class OneByOneHelperApp:
         quit_button = tk.Button(main_frame, text="Quit", command=self.root.destroy)
         quit_button.grid(row=5, column=0, columnspan=2, sticky="we", pady=(6, 0))
 
+        credit_label = tk.Label(main_frame, text="Made by elDziad0", fg="gray")
+        credit_label.grid(row=6, column=0, columnspan=2, sticky="e")
+
         main_frame.grid_columnconfigure(0, weight=1)
         main_frame.grid_columnconfigure(1, weight=1)
+
+        self.root.bind("<FocusIn>", lambda event: self.entry.focus_set())
 
         threading.Thread(target=self.load_wordlist, daemon=True).start()
 

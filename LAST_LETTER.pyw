@@ -42,10 +42,10 @@ class LastLetterApp:
         label = tk.Label(main_frame, text="Starting letters:")
         label.grid(row=0, column=0, sticky="w")
 
-        entry = tk.Entry(main_frame, textvariable=self.prefix_var, width=20)
-        entry.grid(row=1, column=0, columnspan=2, sticky="we", pady=(2, 6))
-        entry.focus_set()
-        entry.bind("<Control-Return>", self.on_ctrl_enter)
+        self.entry = tk.Entry(main_frame, textvariable=self.prefix_var, width=20)
+        self.entry.grid(row=1, column=0, columnspan=2, sticky="we", pady=(2, 6))
+        self.entry.focus_set()
+        self.entry.bind("<Control-Return>", self.on_ctrl_enter)
 
         self.status_var = tk.StringVar(value="Loading word list...")
         status_label = tk.Label(main_frame, textvariable=self.status_var, fg="gray")
@@ -76,8 +76,13 @@ class LastLetterApp:
         quit_button = tk.Button(main_frame, text="Quit", command=self.root.destroy)
         quit_button.grid(row=6, column=0, columnspan=2, sticky="we", pady=(0, 4))
 
+        credit_label = tk.Label(main_frame, text="Made by elDziad0", fg="gray")
+        credit_label.grid(row=7, column=0, columnspan=2, sticky="e")
+
         main_frame.grid_columnconfigure(0, weight=1)
         main_frame.grid_columnconfigure(1, weight=1)
+
+        self.root.bind("<FocusIn>", lambda event: self.entry.focus_set())
 
         threading.Thread(target=self.load_wordlist, daemon=True).start()
 
@@ -124,6 +129,7 @@ class LastLetterApp:
             return
 
         self.root.withdraw()
+        self.prefix_var.set("")
 
         threading.Thread(target=self._type_after_delay, args=(completion,), daemon=True).start()
 
