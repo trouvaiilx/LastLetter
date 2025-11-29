@@ -7,6 +7,7 @@ import ctypes
 import keyboard
 import tkinter as tk
 from tkinter import messagebox
+import tkinter.ttk as ttk
 
 from english_words import get_english_words_set
 
@@ -63,8 +64,8 @@ class LastLetterApp:
         start_button = tk.Button(main_frame, text="Play round", command=self.on_play_round)
         start_button.grid(row=3, column=0, sticky="we", pady=(0, 4))
 
-        clear_cache_button = tk.Button(main_frame, text="Clear cache", command=self.on_clear_cache)
-        clear_cache_button.grid(row=3, column=1, sticky="we", pady=(0, 4), padx=(4, 0))
+        view_used_button = tk.Button(main_frame, text="View Used Words", command=self.show_used_words)
+        view_used_button.grid(row=3, column=1, sticky="we", pady=(0, 4), padx=(4, 0))
 
         speed_label = tk.Label(main_frame, text="Typing speed (ms per char):")
         speed_label.grid(row=4, column=0, columnspan=2, sticky="w", pady=(4, 0))
@@ -82,20 +83,41 @@ class LastLetterApp:
         )
         speed_scale.grid(row=5, column=0, columnspan=2, sticky="we", pady=(0, 4))
 
-        mode_label = tk.Label(main_frame, text="Word selection mode:")
-        mode_label.grid(row=6, column=0, sticky="w")
-
-        mode_dropdown = tk.OptionMenu(
-            main_frame,
-            self.mode_var,
-            "Random Words",
-            "Short Words",
-            "Long Words",
+        style = ttk.Style()
+        style.configure('TCombobox', 
+                       padding=4, 
+                       relief='raised', 
+                       background='#f0f0f0',
+                       arrowcolor='#333333')
+        
+        mode_frame = ttk.Frame(main_frame)
+        mode_frame.grid(row=6, column=0, columnspan=2, sticky="we", pady=(4, 0))
+        
+        mode_label = ttk.Label(mode_frame, text="Word selection mode:")
+        mode_label.pack(side='left', padx=(0, 10))
+        
+        self.mode_combobox = ttk.Combobox(
+            mode_frame,
+            textvariable=self.mode_var,
+            values=["Random Words", "Short Words", "Long Words"],
+            state='readonly',
+            width=15,
+            style='TCombobox'
         )
-        mode_dropdown.grid(row=6, column=1, sticky="e")
+        self.mode_combobox.current(0)
+        self.mode_combobox.pack(side='left', fill='x', expand=True)
+        
+        mode_frame.configure(style='TFrame')
+        style.configure('TFrame', 
+                       borderwidth=1, 
+                       relief='solid',
+                       padding=4)
+
+        clear_words_button = tk.Button(main_frame, text="Clear Used Words", command=self.on_clear_cache)
+        clear_words_button.grid(row=7, column=0, sticky="we", pady=(0, 4))
 
         quit_button = tk.Button(main_frame, text="Quit", command=self.root.destroy)
-        quit_button.grid(row=7, column=0, columnspan=2, sticky="we", pady=(0, 4))
+        quit_button.grid(row=7, column=1, sticky="we", pady=(0, 4), padx=(4, 0))
 
         credit_label = tk.Label(main_frame, text="Made by elDziad0", fg="gray")
         credit_label.grid(row=8, column=0, columnspan=2, sticky="e")
@@ -190,7 +212,10 @@ class LastLetterApp:
             self.roblox_status_label.config(fg="red")
 
     def on_clear_cache(self) -> None:
+        """Clear the list of used words and update the UI if the used words window is open."""
         self.used_words.clear()
+        if hasattr(self, 'used_words_window') and self.used_words_window.winfo_exists():
+            self.update_used_words_list()
 
     def on_play_round(self) -> None:
         prefix = self.prefix_var.get().strip()
@@ -225,6 +250,71 @@ class LastLetterApp:
         self.on_play_round()
         return "break"
 
+    def show_used_words(self) -> None:
+        """Show a window with all used words, updating in real-time."""
+        if not hasattr(self, 'used_words_window') or not self.used_words_window.winfo_exists():
+            self.used_words_window = tk.Toplevel(self.root)
+            self.used_words_window.title("Used Words")
+            self.used_words_window.resizable(True, True)
+            self.used_words_window.attributes('-topmost', True)
+            
+            frame = ttk.Frame(self.used_words_window)
+            frame.pack(fill='both', expand=True, padx=5, pady=5)
+            
+            scrollbar = ttk.Scrollbar(frame)
+            scrollbar.pack(side='right', fill='y')
+            
+            self.used_words_listbox = tk.Listbox(
+                frame, 
+                yscrollcommand=scrollbar.set,
+                font=('Consolas', 10),
+                width=30,
+                height=15
+            )
+            self.used_words_listbox.pack(side='left', fill='both', expand=True)
+            
+            scrollbar.config(command=self.used_words_listbox.yview)
+            
+            self.used_words_count = tk.Label(
+                self.used_words_window, 
+                text=f"Words used: {len(self.used_words)}",
+                anchor='w'
+            )
+            self.used_words_count.pack(fill='x', padx=5, pady=(0, 5))
+            
+            close_button = ttk.Button(
+                self.used_words_window, 
+                text="Close", 
+                command=self.used_words_window.destroy
+            )
+            close_button.pack(pady=(0, 5))
+            
+            self.used_words_window.update_idletasks()
+            width = self.used_words_window.winfo_width()
+            height = self.used_words_window.winfo_height()
+            x = (self.used_words_window.winfo_screenwidth() // 2) - (width // 2)
+            y = (self.used_words_window.winfo_screenheight() // 2) - (height // 2)
+            self.used_words_window.geometry(f'+{x}+{y}')
+            
+            self.used_words_window.protocol("WM_DELETE_WINDOW", self.used_words_window.destroy)
+        
+        self.update_used_words_list()
+        
+        self.used_words_window.lift()
+        self.used_words_window.focus_force()
+    
+    def update_used_words_list(self) -> None:
+        """Update the used words listbox with current used words."""
+        if hasattr(self, 'used_words_window') and self.used_words_window.winfo_exists():
+            self.used_words_listbox.delete(0, tk.END)
+            
+            for word in sorted(self.used_words, key=str.lower):
+                self.used_words_listbox.insert(tk.END, word)
+            
+            self.used_words_count.config(text=f"Words used: {len(self.used_words)}")
+            
+            self.used_words_window.after(500, self.update_used_words_list)
+    
     def _type_after_delay(self, completion: str) -> None:
         time.sleep(1.0)
         try:
@@ -236,6 +326,9 @@ class LastLetterApp:
             time.sleep(1.0)
         finally:
             self.root.after(0, self.root.deiconify)
+            
+            if hasattr(self, 'used_words_window') and self.used_words_window.winfo_exists():
+                self.update_used_words_list()
 
 
 def main() -> None:
