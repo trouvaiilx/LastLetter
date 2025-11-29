@@ -151,7 +151,19 @@ class LastLetterApp:
 
     def _is_roblox_running(self) -> bool:
         try:
-            output = subprocess.check_output(["tasklist"], text=True)
+            startupinfo = None
+            creationflags = 0
+            if os.name == "nt":
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                creationflags = subprocess.CREATE_NO_WINDOW
+
+            output = subprocess.check_output(
+                ["tasklist"],
+                text=True,
+                startupinfo=startupinfo,
+                creationflags=creationflags,
+            )
         except Exception:
             return False
         return "RobloxPlayerBeta.exe" in output
