@@ -105,7 +105,7 @@ class LastLetterApp:
         self.root.bind("<FocusIn>", lambda event: self.entry.focus_set())
 
         threading.Thread(target=self.load_wordlist, daemon=True).start()
-        self.update_roblox_status()
+        self.refresh_roblox_status()
 
     def load_wordlist(self) -> None:
         try:
@@ -167,7 +167,7 @@ class LastLetterApp:
         except Exception:
             pass
 
-    def update_roblox_status(self) -> None:
+    def refresh_roblox_status(self) -> None:
         running = self._is_roblox_running()
         if running:
             self.roblox_status_var.set("Roblox Found")
@@ -175,7 +175,6 @@ class LastLetterApp:
         else:
             self.roblox_status_var.set("Roblox not Found")
             self.roblox_status_label.config(fg="red")
-        self.root.after(2000, self.update_roblox_status)
 
     def on_clear_cache(self) -> None:
         self.used_words.clear()
@@ -198,8 +197,14 @@ class LastLetterApp:
         self.root.withdraw()
         self.prefix_var.set("")
 
-        if self._is_roblox_running():
+        roblox_running = self._is_roblox_running()
+        if roblox_running:
             self._focus_roblox_window()
+            self.roblox_status_var.set("Roblox Found")
+            self.roblox_status_label.config(fg="green")
+        else:
+            self.roblox_status_var.set("Roblox not Found")
+            self.roblox_status_label.config(fg="red")
 
         threading.Thread(target=self._type_after_delay, args=(completion,), daemon=True).start()
 
