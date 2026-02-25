@@ -48,8 +48,8 @@ Building Windows executables (advanced)
 
 Use PyInstaller to create your own standalone .exe files. Example commands:
 
-   pyinstaller --onefile --windowed --icon=LastLetter.ico --add-data "LastLetter.ico;." --collect-data english_words LAST_LETTER.pyw
+   pyinstaller --noconsole --onefile --uac-admin --collect-data english_words --add-data "LastLetter.ico;." --icon=LastLetter.ico LAST_LETTER.pyw
 
-   pyinstaller --onefile --windowed --icon=ONEBYONE.ico --add-data "ONEBYONE.ico;." --collect-data english_words ONE_BY_ONE.pyw
+   pyinstaller --noconsole --onefile --uac-admin --collect-data english_words --add-data "ONEBYONE.ico;." --icon=ONEBYONE.ico ONE_BY_ONE.pyw
 
 The built executables will appear in the "dist" folder.
