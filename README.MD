@@ -52,4 +52,4 @@ Use PyInstaller to create your own standalone .exe files. Example commands:
 
    pyinstaller --noconsole --onefile --uac-admin --collect-data english_words --add-data "ONEBYONE.ico;." --icon=ONEBYONE.ico ONE_BY_ONE.pyw
 
-The built executables will appear in the "dist" folder.
+The built executables will appear in the "dist" folder, portable and will run as administrator.
